@@ -1,5 +1,9 @@
 # Mercure Installer
 
+This repository contains scripts to install and run the Mercure server based on the Caddy webserver onto your system. Its main goal is to install and configure the Mercure server automatically, and setting it up in such a way that it will automatically be managed by supervisor (on Linux).
+
+However, `mercure.sh` can also be used (manually) as a handy wrapper around the Mercure process, handling the setting of the required environment variables before executing the process.
+
 ## Contents
 
 - [Files](#files)                 : An overview of all files in this repository
@@ -17,9 +21,7 @@
 
 ## Instructions
 
-This repository contains scripts to install and run the Mercure server based on the Caddy webserver onto your system. Its main goal is to install and configure the Mercure server automatically, and setting it up in such a way that it will automatically be managed by supervisor (on Linux).
-
-However, you can also use the available `mercure.sh` script to run the server after having installed it manually due to the fact that all options are configurable.
+This section will give some short instructions on how to use the files in this repository.
 
 ### Installation
 
