@@ -2,6 +2,7 @@
 # This script is used to start the Mercure server.
 #
 # Usage:
+#
 #   ./mercure.sh [options]
 #
 # Options can be found by using mercure.sh --help
@@ -30,12 +31,13 @@ exit_error() {
 
 get_key(){
     local KEYFILE=$1
+    local ROOT_DIR=$2
     if [[ -z "$KEYFILE" ]]; then
         # If no key is passed, default to Symfony key
-        KEYFILE="$WEB_ROOT/config/jwt/public.pem"
+        KEYFILE="$ROOT_DIR/config/jwt/public.pem"
         if  [[ -f "$KEYFILE" ]]; then 
             # If key is a file and exists, read it
-            KEY="$(cat $WEB_ROOT/config/jwt/public.pem)"
+            KEY="$(cat $ROOT_DIR/config/jwt/public.pem)"
         else 
             # If key is file but does not exist, exit error
             exit_error "Keyfile [ $KEYFILE ] does not exist or is not readable."
@@ -173,8 +175,8 @@ WEB_ROOT=${WEB_ROOT:-"/var/www/antiftw"}
 MERCURE_PATH=${MERCURE_PATH:-"/usr/sbin/mercure"}
 
 # Get keys
-PUBLISH_KEY="$(get_key $PUBLISH_KEYFILE)"
-SUBSCRIBE_KEY="$(get_key $SUBSCRIBE_KEYFILE)"
+PUBLISH_KEY="$(get_key $PUBLISH_KEYFILE $WEB_ROOT)"
+SUBSCRIBE_KEY="$(get_key $SUBSCRIBE_KEYFILE $WEB_ROOT)"
 
 # Use RS256 by default (RSA SHA-256)
 PUBLISH_ALG=${PUBLISH_ALG:-"RS256"}
