@@ -1,7 +1,11 @@
-{$SERVER_NAME:localhost}
+{
+	{$GLOBAL_OPTIONS}
+}
+
+{$MERCURE_SERVER_NAME:localhost}
 
 log {
-	output file /home/antiftw/caddy-server/mercure.log {
+	output file /var/log/mercure/caddy_mercure.log {
         roll_local_time
         roll_keep 7
     }

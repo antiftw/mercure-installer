@@ -119,7 +119,7 @@ VERBOSE=${VERBOSE:-0}
 OS=${OS:-"linux"}
 ARCHITECTURE=${ARCHITECTURE:-"x86_64"}
 CONFIG_DIRECTORY=${CONFIG_DIRECTORY:-"/etc/mercure"}
-ENVIRONMENT=${ENVIRONMENT:-"prod"}
+ENVIRONMENT=${ENVIRONMENT:-"PROD"}
 SCRIPT_DIR="$PWD"
 USER=${USER:-"antiftw"}
 
@@ -177,29 +177,16 @@ RETURN_CODE=$((RETURN_CODE_1 + RETURN_CODE_2 + RETURN_CODE_3))
 
 # Copy Caddyfile
 [ "$VERBOSE" -ge 1 ] && printf "Copying Caddyfile..."
-if [ "$ENVIRONMENT" == "prod" ]; then
+if [ "$ENVIRONMENT" == "PROD" ]; then
     cp "$SCRIPT_DIR/config/Caddyfile" "$CONFIG_DIRECTORY/Caddyfile"; RETURN_CODE=$?
-elif [ "$ENVIRONMENT" == "dev" ]; then
+elif [ "$ENVIRONMENT" == "DEV" ]; then
     cp "$SCRIPT_DIR/config/Caddyfile.dev" "$CONFIG_DIRECTORY/Caddyfile"; RETURN_CODE=$?
-elif [ "$ENVIRONMENT" == "test" ]; then
+elif [ "$ENVIRONMENT" == "TEST" ]; then
     cp "$SCRIPT_DIR/config/Caddyfile.test" "$CONFIG_DIRECTORY/Caddyfile"; RETURN_CODE=$?
 else
     exit_error "Unknown environment: $ENVIRONMENT, use --help for more information"
 fi
-
-if [ -d "config/$ENVIRONMENT" ]; then 
-    if [ ! -f "config/$ENVIRONMENT/.mercure.env" ] || [ ! -f config/$ENVIRONMENT/Caddyfile]; 
-    then exit_error "Missing config files for environment: $ENVIRONMENT, use --help for more information"
-    else 
-        [[ "$VERBOSE" -ge 1 ]] && printf "Copying environment specific config files..."
-        cp "$SCRIPT_DIR/config/$ENVIRONMENT/Caddyfile" "$CONFIG_DIRECTORY/Caddyfile"; RETURN_CODE_1=$?
-        cp "$SCRIPT_DIR/config/$ENVIRONMENT/.mercure.env" "$CONFIG_DIRECTORY/.mercure.env"; RETURN_CODE_2=$?
-        RETURN_CODE=$((RETURN_CODE_1 + RETURN_CODE_2))
-    fi
-else 
-    exit_error "Missing config directory for environment: $ENVIRONMENT, use --help for more information"
-fi
-
+[ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not copy Caddyfile"
 
 # Create database file
 [ "$VERBOSE" -ge 1 ] && printf "Creating database file..."
@@ -217,26 +204,20 @@ RETURN_CODE=$((RETURN_CODE_1 + RETURN_CODE_2))
 [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Error occurred while cleaning up"
 
 if [ "$OS" == "linux" ]; then
-    
-    # Copy service configuration
-    [ "$VERBOSE" -ge 1 ] && printf "Copying service configuration..."
-    cp "$SCRIPT_DIR/config/mercure.service" "/etc/systemd/system/mercure.service"; RETURN_CODE=$?
-    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not copy service configuration"
+    # Install supervisor to manage Mercure process
+    [ "$VERBOSE" -ge 1 ] && printf "Installing supervisor..."
+    apt-get install -qq supervisor; RETURN_CODE=$?
+    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not install supervisor"
 
-    # Copy environment file
-    [ "$VERBOSE" -ge 1 ] && printf "Copying environment file..."
-    cp "$SCRIPT_DIR/config/.env" "$CONFIG_DIRECTORY/.env"; RETURN_CODE=$?
-    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not copy environment file"
+    # Copy supervisor worker file
+    [ "$VERBOSE" -ge 1 ] && printf "Copying supervisor config..."
+    cp "$SCRIPT_DIR/config/mercure.conf" /etc/supervisor/conf.d/mercure.conf; RETURN_CODE=$?
+    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not copy supervisor config"
 
-    # Reload systemd
-    [ "$VERBOSE" -ge 1 ] && printf "Reloading systemd..."
-    systemctl daemon-reload; RETURN_CODE=$?
-    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not reload systemd"
-
-    # Enable service
-    [ "$VERBOSE" -ge 1 ] && printf "Enabling service..."
-    systemctl enable mercure.service; RETURN_CODE=$?
-    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not enable service"
+    # Copy mercure.sh to /usr/local/bin
+    [ "$VERBOSE" -ge 1 ] && printf "Copying mercure.sh..."
+    cp "$SCRIPT_DIR/mercure.sh" /usr/local/bin/mercure.sh; RETURN_CODE=$?
+    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not copy mercure.sh"
 
     # Create log directory
     [ "$VERBOSE" -ge 1 ] && printf "Creating log directory $LOG_DIRECTORY..."
@@ -247,7 +228,15 @@ if [ "$OS" == "linux" ]; then
     RETURN_CODE=$((RETURN_CODE_1 + RETURN_CODE_2 + RETURN_CODE_3))
     [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not create log directory $LOG_DIRECTORY"
 
+    # Load new supervisor config
+    [ "$VERBOSE" -ge 1 ] && printf "Loading supervisor config..."
+    supervisorctl reread && supervisorctl update; RETURN_CODE=$?
+    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not load supervisor config"
 
+    # Start mercure process
+    [ "$VERBOSE" -ge 1 ] && printf "Starting mercure process..."
+    supervisorctl start mercure:mercure_0; RETURN_CODE=$?
+    [ "$VERBOSE" -ge 1 ] && handle_return "$RETURN_CODE" "Could not start mercure process"
 
     echo ""
     echo "Mercure has been installed and started using the default values."
@@ -257,13 +246,13 @@ if [ "$OS" == "linux" ]; then
     echo ""
     echo "You can also start and stop the Mercure server by running:"
     echo ""
-    echo "  systemctl start mercure.service"
-    echo "  systemctl stop mercure.service"
+    echo "  supervisorctl start mercure:mercure_0"
+    echo "  supervisorctl stop mercure:mercure_0"
     echo ""
     echo "To change the configuration, edit the following files:"
     echo ""
     echo "  /etc/mercure/Caddyfile"
-    echo "  /etc/systemd/conf.d/mercure.conf"
+    echo "  /etc/supervisor/conf.d/mercure.conf"
     echo ""
     echo "And restart the Mercure process by running:"
     echo ""

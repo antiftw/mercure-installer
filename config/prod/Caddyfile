@@ -1,11 +1,20 @@
 # Learn how to configure the Mercure.rocks Hub on https://mercure.rocks/docs/hub/config
+#
+# To define global options, it's probably cleaner to just write them here, instead of using the placeholder below.
+#
+# For available global options see https://caddyserver.com/docs/caddyfile/options#global-options
+#
 {
 	{$GLOBAL_OPTIONS}
 }
 
-{$SERVER_NAME:localhost}
+{$MERCURE_SERVER_NAME:localhost}
 
 log {
+	output file /var/log/mercure/caddy_mercure.log {
+        roll_local_time
+        roll_keep 7
+    }
 	format filter {
 		wrap console
 		fields {
@@ -28,10 +37,6 @@ route {
 		publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
 		# Subscriber JWT key
 		subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
-		# CORS Origins
-		cors_origins {env.MERCURE_CORS_ORIGINS}
-		# Publisher allowed origins
-		publisher_origins {env.MERCURE_PUBLISHER_ORIGINS}
 		# Extra directives
 		{$MERCURE_EXTRA_DIRECTIVES}
 	}

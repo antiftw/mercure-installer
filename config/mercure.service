@@ -1,0 +1,31 @@
+[Unit]
+Description=Mercure Hub
+After=network.target
+StartLimitBurst=5
+StartLimitIntervalSec=33
+
+[Service]
+type=simple
+WorkingDirectory=/etc/mercure
+EnvironmentFile=/etc/mercure/.env
+Environment=MERCURE_PUBLISHER_JWT_KEY=`cat /var/www/antiftw/config/jwt/public.pem`
+Environment=MERCURE_PUBLISHER_JWT_ALG=RS256
+Environment=MERCURE_SUBSCRIBER_JWT_KEY=`cat /var/www/antiftw/config/jwt/public.pem`
+Environment=MERCURE_SUBSCRIBER_JWT_ALG=R256
+Environment=MERCURE_SERVER_NAME=:3333
+Environment=MERCURE_CORS_ORIGINS=*
+Environment=MERCURE_PUBLISHER_ORIGINS=*
+Environment=XDG_CONFIG_HOME=/etc/mercure
+Environment=HOME=/etc/mercure
+Environment=MERCURE_TRANSPORT_URL=bolt:///etc/mercure/mercure.db
+ExecStart=/usr/local/bin/mercure run --config=/etc/mercure/Caddyfile
+ExecReload=/usr/local/bin/mercure reload --config=/etc/mercure/Caddyfile
+StandardOutput=file:/var/log/mercure/mercure.log
+StandardError=file:/var/log/mercure/mercure.log
+
+Restart=always
+RestartSec=5
+User=www-data
+
+[Install]
+WantedBy=multi-user.target

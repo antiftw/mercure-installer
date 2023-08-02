@@ -1,0 +1,187 @@
+# Learn how to configure the Mercure.rocks Hub on https://mercure.rocks/docs/hub/config
+#
+# This file contains a comprehenisve list of all the configuration options.
+# You can copy/paste the ones you need in your own Caddyfile.
+#
+
+################> GLOBAL OPTIONS #################
+# https://caddyserver.com/docs/caddyfile/options #
+##################################################
+
+{
+	# General Options
+	debug
+	http_port    <port>
+	https_port   <port>
+	default_bind <hosts...>
+	order <dir1> first|last|[before|after <dir2>]
+	storage <module_name> {
+		<options...>
+	}
+	storage_clean_interval <duration>
+	renew_interval <duration>
+	ocsp_interval  <duration>
+	admin   off|<addr> {
+		origins <origins...>
+		enforce_origin
+	}
+	persist_config off
+	log [name] {
+		output  <writer_module> ...
+		format  <encoder_module> ...
+		level   <level>
+		include <namespaces...>
+		exclude <namespaces...>
+	}
+	grace_period   <duration>
+	shutdown_delay <duration>
+
+	# TLS Options
+	auto_https off|disable_redirects|ignore_loaded_certs|disable_certs
+	email <yours>
+	default_sni <name>
+	local_certs
+	skip_install_trust
+	acme_ca <directory_url>
+	acme_ca_root <pem_file>
+	acme_eab <key_id> <mac_key>
+	acme_dns <provider> ...
+	on_demand_tls {
+		ask      <endpoint>
+		interval <duration>
+		burst    <n>
+	}
+	key_type ed25519|p256|p384|rsa2048|rsa4096
+	cert_issuer <name> ...
+	ocsp_stapling off
+	preferred_chains [smallest] {
+		root_common_name <common_names...>
+		any_common_name  <common_names...>
+	}
+
+	# Server Options
+	servers [<listener_address>] {
+		name <name>
+		listener_wrappers {
+			<listener_wrappers...>
+		}
+		timeouts {
+			read_body   <duration>
+			read_header <duration>
+			write       <duration>
+			idle        <duration>
+		}
+		trusted_proxies <module> ...
+		metrics
+		max_header_size <size>
+		log_credentials
+		protocols [h1|h2|h2c|h3]
+		strict_sni_host [on|insecure_off]
+	}
+
+	# PKI Options
+	pki {
+		ca [<id>] {
+			name                  <name>
+			root_cn               <name>
+			intermediate_cn       <name>
+			intermediate_lifetime <duration>
+			root {
+				format <format>
+				cert   <path>
+				key    <path>
+			}
+			intermediate {
+				format <format>
+				cert   <path>
+				key    <path>
+			}
+		}
+	}
+
+	# Event options
+	events {
+		on <event> <handler...>
+	}
+}
+
+###############> SERVERNAME ###############
+
+{$MERCURE_SERVER_NAME:localhost}
+
+###############> LOGGING ###############
+# https://caddyserver.com/docs/logging #
+########################################
+
+{
+	"level": "info",
+	"ts": 1646861401.5241024,
+	"logger": "http.log.access",
+	"msg": "handled request",
+	"request": {
+		"remote_ip": "127.0.0.1",
+		"remote_port": "41342",
+		"proto": "HTTP/2.0",
+		"method": "GET",
+		"host": "localhost",
+		"uri": "/",
+		"headers": {
+			"User-Agent": ["curl/7.82.0"],
+			"Accept": ["*/*"],
+			"Accept-Encoding": ["gzip, deflate, br"],
+		},
+		"tls": {
+			"resumed": false,
+			"version": 772,
+			"cipher_suite": 4865,
+			"proto": "h2",
+			"server_name": "example.com"
+		}
+	},
+	"user_id": "",
+	"duration": 0.000929675,
+	"size": 10900,
+	"status": 200,
+	"resp_headers": {
+		"Server": ["Caddy"],
+		"Content-Encoding": ["gzip"],
+		"Content-Type": ["text/html; charset=utf-8"],
+		"Vary": ["Accept-Encoding"]
+	}
+}
+
+############> CADDYFILE DIRECTIVES ################
+# https://caddyserver.com/docs/caddyfile/directives
+###################################################
+
+{$EXTRA_DIRECTIVES}
+
+###############> MERCURE SPECIFICS ###############
+##### https://mercure.rocks/docs/hub/config ######
+##################################################
+
+route {
+	encode zstd gzip
+
+	mercure {
+		publisher_jwt <key> [<algorithm>]
+		subscriber_jwt <key> [<algorithm>]
+		anonymous
+		publish_origins <origins...>
+		cors_origins <origin...>
+		cookie_name <name>
+		subscriptions
+		heartbeat <duration>
+		transport_url <url>
+		dispatch_timeout <duration>
+		write_timeout <duration>
+		protocol_version_compatibility
+		ui
+		demo
+		cache <num-counters> <max-cost>
+	}
+
+	redir / /.well-known/mercure/ui/
+	respond /healthz 200
+	respond "Not Found" 404
+}
