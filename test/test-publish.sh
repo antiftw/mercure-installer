@@ -24,7 +24,7 @@ SIGNATURE=$(echo -n "${JWT_HEADER_B64}.${JWT_PAYLOAD}" | openssl dgst -binary -$
 
 JWT_TOKEN="${JWT_HEADER_B64}.${JWT_PAYLOAD_B64}.${SIGNATURE}"
 echo "token_C: $JWT_TOKEN"
-JWT_TOKEN_1=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdfX0.MbLRBli1HCMU2qsYTlHY_mQV_7N6MxCIMlVuQ6uNY44
+JWT_TOKEN_1="!ChangeME!"
 echo "token_M: $JWT_TOKEN_1"
 echo "Calculated token:"
 curl --request POST \
